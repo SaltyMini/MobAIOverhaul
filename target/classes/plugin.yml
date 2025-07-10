@@ -1,0 +1,4 @@
+name: MobAIOverhaul
+version: '0.0.1'
+main: Clay.Sam.mobAIOverhaul.MobAIOverhaul
+api-version: '1.21'

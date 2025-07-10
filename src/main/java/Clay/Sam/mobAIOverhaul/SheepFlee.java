@@ -3,17 +3,20 @@ package Clay.Sam.mobAIOverhaul;
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Sheep;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumSet;
 
-public class SheepFlee implements Goal<Sheep> {
+public class SheepFlee implements Goal<@NotNull Sheep> {
 
-    public static final GoalKey<Sheep> key = GoalKey.of(Sheep.class, NamespacedKey.minecraft("flee"));
+    public static final GoalKey<@NotNull Sheep> key = GoalKey.of(Sheep.class, NamespacedKey.minecraft("flee"));
 
-    Player runAwayFromPlayer;
+    Player player;
     Sheep sheep;
 
     /**
@@ -23,33 +26,74 @@ public class SheepFlee implements Goal<Sheep> {
      * @param sheep  The sheep that will flee.
      */
     public SheepFlee(Player player, Sheep sheep) {
-        this.runAwayFromPlayer = player;
+        this.player = player;
         this.sheep = sheep;
     }
 
     @Override
     public boolean shouldActivate() {
-        return false;
+        // Only activate if player is within 32 blocks
+        double distance = sheep.getLocation().distanceSquared(player.getLocation());
+        return distance <= 40 * 40;
     }
+
 
     @Override
     public void start() {
-        runAwayFromPlayer.sendMessage( "Sheep is fleeing from you!");
+        player.sendMessage( "Sheep is fleeing from you!");
     }
+
+    @Override
+    public void stop() {
+        player.sendMessage("Sheep has stopped fleeing.");
+    }
+
 
     @Override
     public void tick() {
-        //TODO: Implement logic to make the sheep flee from the player
-        sheep.getPathfinder().moveTo(runAwayFromPlayer.getLocation(), 1);
+        Location playerLoc = player.getLocation();
+        Location sheepLoc = sheep.getLocation();
+
+        // Check if already far enough away
+        double currentDistance = sheepLoc.distanceSquared(playerLoc);
+        if (currentDistance >= 40 * 40) {
+            return; // Don't move if already safe
+        }
+
+        // Calculate direction away from player
+        Vector direction = sheepLoc.toVector().subtract(playerLoc.toVector());
+        if (direction.length() > 0) {
+            direction.normalize();
+        } else {
+            // If exactly at same location, pick random direction
+            direction = new Vector(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+        }
+
+        // Move to a location 6 blocks away
+        Location fleeLocation = sheepLoc.clone().add(direction.multiply(6));
+        sheep.getPathfinder().moveTo(fleeLocation, 1.6);
     }
 
     @Override
-    public GoalKey<Sheep> getKey() {
+    public @NotNull GoalKey<@NotNull Sheep> getKey() {
         return key;
     }
 
     @Override
-    public EnumSet<GoalType> getTypes() {
+    public @NotNull EnumSet<GoalType> getTypes() {
         return EnumSet.of(GoalType.MOVE, GoalType.LOOK);
+    }
+
+    @Override
+    public boolean shouldStayActive() {
+        Location playerLoc = player.getLocation();
+        Location sheepLoc = sheep.getLocation();
+        // Only move if player is still too close
+        double currentDistance = sheepLoc.distanceSquared(playerLoc);
+
+        if (currentDistance >= 40 * 40) { // Stop when 40+ blocks away
+            return false;
+        }
+        return true;
     }
 }
