@@ -25,6 +25,7 @@ public class SheepFlee implements Goal<@NotNull Sheep> {
      * @param player The player that the sheep will flee from.
      * @param sheep  The sheep that will flee.
      */
+
     public SheepFlee(Player player, Sheep sheep) {
         this.player = player;
         this.sheep = sheep;

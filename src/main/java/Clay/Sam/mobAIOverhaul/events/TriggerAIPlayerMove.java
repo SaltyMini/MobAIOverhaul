@@ -24,6 +24,9 @@ public class TriggerAIPlayerMove implements Listener {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
+
+        if(event.getPlayer().isSneaking()) return;
+
         List<Entity> entityIsHearRange = event.getPlayer().getNearbyEntities(hearingRange.x, hearingRange.y, hearingRange.z);
 
         double movementDistance = event.getFrom().distanceSquared(event.getTo());
